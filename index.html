@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://img.youtube.com ; img-src https://img.youtube.com file:">
+        <link rel="stylesheet" type="text/css" href="style.css">
+        <title>YoutubeDDL</title>
+    </head>
+  
+    <body id="body">
+        <div id="drag"></div>
+        <div class="controls">
+            <div id="minimize">&#x2500;</div>
+            <div id="close">&#x2715;</div>
+        </div>
+        <img id="thumbnail" width="512" height="288" src="images/Untitled.png">
+        <div id="qualityContainer">
+        <button id="p360">360p</button> <button id="p720">720p</button> <button id="p1080">1080p</button> <button id="p2160">2160p</button>
+        </div>
+        <input id="path" spellcheck="false" placeholder="Save Path">
+        <input id="link" spellcheck="false" placeholder="Video Link"> <br>
+        <button id="dlButton">Download</button> <br>
+        <textarea id="progress" spellcheck="false"> </textarea>
+        <div class="tr">
+            <div class="overlay" id="overlay"></div>
+        </div>        
+        <script src="renderer.js"></script>
+
+    </body>
+</html>

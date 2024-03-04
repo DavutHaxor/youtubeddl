@@ -1,0 +1,204 @@
+body{
+    background-color: #202020;
+    text-align: center;
+    user-select: none;
+    height: 584px;
+}
+
+#drag{
+    position: absolute;
+    width: 784px;
+    height: 584px;
+    -webkit-app-region: drag;
+}
+
+
+.controls{
+    display: inline;
+    position: absolute;
+    transform: translateX(565px);
+    user-select: none;
+    -webkit-app-region: no-drag;
+}
+
+#minimize{
+    border: none;
+    display: inline;
+    padding: 20px;
+    color: #cdcd24;
+    width: 10px; height: 10px;
+    padding-bottom: 5px;
+    padding-top: 5px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+#minimize:hover {
+    cursor:default;
+    background-color: #303030
+}
+
+#close {
+    border: none;
+    display: inline;
+    color: #c12323;
+    padding-bottom: 5px;
+    padding-top: 5px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+#close:hover {
+    cursor:default;
+    background-color: #303030
+}
+
+img{
+    border-radius: 20px;
+    transform: translateY(15px);
+    -webkit-user-drag: none;
+}
+
+#qualityContainer{
+    transform: translateY(40px);
+}
+
+#qualityContainer button{
+    width: 65px;
+    height: 35px;
+    border: none;
+    margin-left: 38px;
+    margin-right: 38px;
+    background-color: #151515;
+    color: rgba(55, 202, 38, 1);
+    font-size: 95%;
+    border-radius: 20px;
+    -webkit-app-region: no-drag;
+}
+
+#qualityContainer button:hover{
+    background-color: #171717;
+    color:rgba(54, 202, 38, 0.75);
+    border: 1px rgba(54, 202, 38, 0.6) solid;
+}
+
+#path{
+    width: 500px;
+    height: 28px;
+    font-size: 1.2em;
+    text-align: center;
+    transform: translateY(190%);
+    background-color: #151515;
+    border: none; 
+    color: rgba(54, 202, 38, 0.75);
+    width: 500px;
+    outline: none;
+    pointer-events: none;
+    border-radius: 20px;
+    -webkit-app-region: no-drag;
+}
+
+#path:focus{
+    outline-width: 0;
+    caret-color: rgba(54, 202, 38, 0.7);
+}
+
+#path::placeholder{
+    color: rgba(54, 202, 38, 0.7);
+}
+
+#path:focus::placeholder{
+    color: transparent;
+}
+
+#link{
+    width: 500px;
+    height: 28px;
+    font-size: 1.2em;
+    text-align: center;
+    transform: translateY(230%);
+    background-color: #151515;
+    border: none; 
+    color: rgba(54, 202, 38, 0.75);
+    border-radius: 20px;
+    -webkit-user-drag: none;
+    z-index: 1;
+    -webkit-app-region: no-drag;
+}
+
+#link:focus{
+    outline-width: 0;
+    caret-color: rgba(54, 202, 38, 0.7);
+}
+
+#link::placeholder{
+    color: rgba(54, 202, 38, 0.7);
+}
+
+#link:focus::placeholder{
+    color: transparent;
+}
+
+#dlButton{
+    position: absolute;
+    top: 470px;
+    left: 300px;
+    font-size: 1.5em;
+    background-color: #151515;
+    color: rgba(55, 202, 38, 1);
+    border: none;
+    width: 200px;
+    height: 50px;
+    margin-top: 7px;
+    border-radius: 45px;
+    -webkit-app-region: no-drag;
+}
+
+#dlButton:hover{
+    background-color: #171717;
+    color:rgba(54, 202, 38, 0.75);
+    border: 2px rgba(54, 202, 38, 0.6) solid;
+}
+
+#progress{
+    transform: translateY(315%);
+    background-color: #151515;
+    width: 500px;
+    height: 36px;
+    margin-top: 0px;
+    color: rgba(54, 202, 38, 1);
+    border: 1px ;
+    resize: none;
+    border-radius: 18px;
+    -webkit-app-region: no-drag;
+}
+
+#progress:focus{
+    outline-width: 0;
+    caret-color: rgba(54, 202, 38, 0.7);
+}
+
+#progress::-webkit-scrollbar {
+    width: 10px;
+}
+
+#progress::-webkit-scrollbar-track {
+    background: gray;
+    border-radius: 10px;
+}
+
+#progress::-webkit-scrollbar-thumb {
+    background: #303030;
+    border-radius: 6px;
+}
+
+.overlay {
+    position: absolute;
+    top: 366px;
+    left: 150px;
+    width: 500px;
+    height: 28px;
+    background: transparent;
+    pointer-events: auto;
+    transform: translateY(27px);
+}
