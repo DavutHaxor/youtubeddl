@@ -18,6 +18,6 @@ I wont bother creating one for windows since it sucks.
 
 ## Images
 
-![Clean] (https://private-user-images.githubusercontent.com/37223772/309771853-535ef406-9468-4d94-ba44-74eb46334f4d.png)
+![Clean](https://private-user-images.githubusercontent.com/37223772/309771853-535ef406-9468-4d94-ba44-74eb46334f4d.png)
 
-![Image] (https://private-user-images.githubusercontent.com/37223772/309773095-ef5fc2a5-45a0-497b-a53e-4e0ab9ca38b8.png)
+![Image](https://private-user-images.githubusercontent.com/37223772/309773095-ef5fc2a5-45a0-497b-a53e-4e0ab9ca38b8.png)
