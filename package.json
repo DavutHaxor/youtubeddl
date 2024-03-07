@@ -1,11 +1,10 @@
 {
   "name": "youtubeddl",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A GUI to download youtube videos",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "test": "test"
+    "start": "electron ."
   },
   "author": "DavutHaxor",
   "license": "ISC"

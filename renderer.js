@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function() {
         p2160.style = "background-color: rgba(55, 202, 38, 0.6); color: #151515; font-weight: bolder";
     })
 
-
+    // This function extracts the video id. Supports both long and short URLs.
     function extractVideoId(url) {
         let match = url.match(/[?&]v=([^&]+)/);
         if (match && match[1]) {
@@ -112,7 +112,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-
+    // This function checks if a thumbnail format exists.
     function thumbnailExists(url, callback) {
         var xhr = new XMLHttpRequest();
         xhr.open('HEAD', url);
@@ -124,14 +124,15 @@ document.addEventListener("DOMContentLoaded", function() {
         xhr.send(null);
     }
 
-
+    // Event listener for link input. 
     textbox.addEventListener('input', () => {
         let videoId = extractVideoId(textbox.value);
-        if (videoId) {
+        if (videoId) { // Here we check if video id is exists
             let thumbnailMaxResUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
             let thumbnailSdUrl = `https://img.youtube.com/vi/${videoId}/sddefault.jpg`
+            let thumbnailHqUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
             thumbnailExists(thumbnailMaxResUrl, function(exists) {
-                if (exists) {
+                if (exists) { // Here we check all of the 3 formats for thumbnail. 
                     progress.textContent = ``;
                     thumbnail.src = thumbnailMaxResUrl;
                 } else {
@@ -141,20 +142,28 @@ document.addEventListener("DOMContentLoaded", function() {
                             thumbnail.src = thumbnailSdUrl;
                         }
                         else {
-                            progress.textContent = `Video does not exist.`;
-                            thumbnail.src = `images/Untitled.png`;
+                            thumbnailExists(thumbnailHqUrl, function(exists) {
+                                if (exists) {
+                                    progress.textContent = ``;
+                                    thumbnail.src = thumbnailHqUrl;
+                                }
+                                else {
+                                    progress.textContent = `Video does not exist.`;
+                                    thumbnail.src = `images/Untitled.png`;
+                                }
+                            });
                         }
-                    })
-                }
-                
+                    });
+                }               
             });
         }
-
+        // Default image for thumbnail, just a blank image with our program's background that i created in GIMP.
         if (!videoId) {
             thumbnail.src = `images/Untitled.png`;
         }
 
     });
+
 
     function checkPath() {
         const { exec } = window.electron.require('child_process');
@@ -168,11 +177,17 @@ document.addEventListener("DOMContentLoaded", function() {
             }
 
             let savePath = stdout;
-            path.value = savePath;
+            if (!savePath.includes(";") && !savePath.includes("|")) {
+                path.value = savePath;
+            }
+            else {
+                path.value = `Path can't contain semicolons, ambersands and pipes`;
+            }
+            
         }
     )};
 
-    
+    // When the application first opened, it checks it with 10ms interval since i want the path to come fast. Then it checks every second.
     let checkPathInterval;
     checkPathInterval = setInterval(() => {
         checkPath();
@@ -181,152 +196,47 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 10);
 
 
+    function sanitizeInput(input) {
+        // For safety
+        return input.replace(/[^a-zA-Z0-9\-_:/]/g, '');
+    }
+
+
     dlButton.onclick = function() {
         let videoLink = textbox.value;
-        let includes = videoLink.includes(";");
-        if (includes) {
+        let includes = videoLink.includes(";"); // Do not try these at home.
+        let includes2 = videoLink.includes("|"); // youtube.com/asdasd ; sudo rm -rf / ... what a funny video id right
+        let includes3 = videoLink.includes("&"); // does a url have this? i dont think so.
+        videoLink = sanitizeInput(videoLink);
+        if (includes || includes2 || includes3) {
             progress.textContent = "You try nasty things!!!";
         }
-        if (!includes && mode) {
+
+        if (!includes && !includes2 && !includes3 && mode) {
+            progress.textContent = "Checking video quality"
             checkQuality();
         }
+
         if (!mode) {
             progress.textContent = "Please select a quality.";
         }
     };
 
+    // Gets the path. Actually sends the signal to main. Main gets the path and writes it to the file
     pathOverlay.addEventListener('click', (event, path) => {
         console.log("sending the path:get signal");
         window.electron.sendSignal();
     }) 
 
 
-    function checkQuality() {
+    function checkQuality() { // This actually both saves the quality and checks video and audio quality afterwards.
         const { exec } = window.electron.require('child_process');
-        let videoQualityId;
+
         const saveQuality = `echo "" > quality.txt | yt-dlp -F ${textbox.value} > quality.txt`;
 
         exec(saveQuality, (error, stderr, stdout) => {
             if (!error) {
-                switch(mode) {
-                    case '2160p':
-                        path.textContent = `Checking video quality.`;
-                        let i = 0;
-                        let interval = setInterval(() => {
-                            if (i === quality2160p.length) {
-                                clearInterval(interval);
-                            }
-                            videoQualityId = quality2160p[i];
-                            const grepQuality = `grep -P '\\b${videoQualityId}(?![\\d.])\\b' quality.txt`;
-                            exec(grepQuality, (error, stdout, stderr) => {
-                                if (stdout) {
-                                    console.log("Quality id saved successfully");
-                                    const saveVideoId = `echo "${videoQualityId}" > qualityId.txt`;
-                                    exec(saveVideoId, (error, stderr, stdout) => {
-                                    });
-                                    clearInterval(interval);
-                                    checkAudioQuality();
-                                }
-                                if (stderr) {
-                                    console.error("Error:", stderr);
-                                }
-                                if (error !== null) {
-                                    console.error("Exec error:", error);
-                                }
-                            });
-                            i++;
-                        }, 500); 
-                    break;
-
-                    case '1080p':
-                        path.textContent = `Checking video quality.`;
-                        let i1 = 0;
-                        let interval1 = setInterval(() => {
-                            if (i1 === quality1080p.length) {
-                                clearInterval(interval1);
-                            }
-                            videoQualityId = quality1080p[i1];
-                            const grepQuality = `grep -P '\\b${videoQualityId}(?![\\d.])\\b' quality.txt`;
-                            exec(grepQuality, (error, stdout, stderr) => {
-                                if (stdout) {
-                                    console.log("Quality id saved successfully");
-                                    const saveVideoId = `echo "${videoQualityId}" > qualityId.txt`;
-                                    exec(saveVideoId, (error, stderr, stdout) => {
-                                    });
-                                    clearInterval(interval1);
-                                    checkAudioQuality();
-                                }
-                                if (stderr) {
-                                    console.error("Error:", stderr);
-                                }
-                                if (error !== null) {
-                                    console.error("Exec error:", error);
-                                }
-                            });
-                            i1++;
-                        }, 500);
-                    break;
-
-                    case '720p':
-                    path.textContent = `Checking video quality.`;
-                    let i2 = 0;
-                    let interval2 = setInterval(() => {
-                        if (i2 === quality720p.length) {
-                            clearInterval(interval2);
-                        }
-                        videoQualityId = quality720p[i2];
-                        const grepQuality = `grep -P '\\b${videoQualityId}(?![\\d.])\\b' quality.txt`;
-                        exec(grepQuality, (error, stdout, stderr) => {
-                            if (stdout) {
-                                console.log("Quality id saved successfully");
-                                const saveVideoId = `echo "${videoQualityId}" > qualityId.txt`;
-                                exec(saveVideoId, (error, stderr, stdout) => {
-                                });
-                                clearInterval(interval2);
-                                checkAudioQuality();
-                            }
-                            if (stderr) {
-                                console.error("Error:", stderr);
-                            }
-                            if (error !== null) {
-                                console.error("Exec error:", error);
-                            }
-                        });
-                        i2++;
-                    }, 500);
-                    break;
-                    case '360p': 
-                    path.textContent = `Checking video quality.`;
-                    let i3 = 0;
-                    let interval3 = setInterval(() => {
-                        if (i3 === quality360p.length) {
-                            clearInterval(interval3);
-                        }
-                        videoQualityId = quality360p[i3];
-                        const grepQuality = `grep -P '\\b${videoQualityId}(?![\\d.])\\b' quality.txt`;
-                        exec(grepQuality, (error, stdout, stderr) => {
-                            if (stdout) {
-                                console.log("Quality id saved successfully");
-                                const saveVideoId = `echo "${videoQualityId}" > qualityId.txt`;
-                                exec(saveVideoId, (error, stderr, stdout) => {
-                                });
-                                clearInterval(interval3);
-                                checkAudioQuality();
-                            }
-                            if (stderr) {
-                                console.error("Error:", stderr);
-                            }
-                            if (error !== null) {
-                                console.error("Exec error:", error);
-                            }
-                        });
-                        i3++;
-                    }, 500);
-                    break;
-                    default: 
-                        progress.textContent = `Selecting a quality`;
-                    break;
-                }
+                checkVideoQuality();
             }
 
             if (error) {
@@ -335,67 +245,76 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    function checkAudioQuality() {
-        const { exec } = window.electron.require('child_process');
-        let audioQualityId;
-
+    function checkVideoQuality() { // Executes the checker with the given list of video quality ids.
         switch(mode) {
+            case '2160p':
+                videoQualityChecker(quality2160p);
+            break;
+
             case '1080p':
-                path.textContent = `Checking audio quality.`;
-                let i = 0;
-                let interval = setInterval(() => {
-                    if (i === audioQualityMedium.length) {
-                        clearInterval(interval);
-                    }
-                    audioQualityId = audioQualityMedium[i];
-                    const grepQuality = `grep -P '\\b${audioQualityId}(?![\\d.])\\b' quality.txt`;
-                    exec(grepQuality, (error, stdout, stderr) => {
-                        if (stdout) {
-                            console.log("Quality id saved successfully");
-                            const saveAudioId = `echo "${audioQualityId}" > audioQualityId.txt`;
-                            exec(saveAudioId, (error, stderr, stdout) => {
-                            });
-                            clearInterval(interval);
-                            road2download();
-                        }
-                        if (stderr) {
-                            console.error("Error:", stderr);
-                        }
-                        if (error !== null) {
-                            console.error("Exec error:", error);
-                        }
-                    });
-                    i++;
-                }, 500); 
+                videoQualityChecker(quality1080p);
             break;
 
             case '720p':
-                path.textContent = `Checking audio quality.`;
-                let i1 = 0;
-                let interval1 = setInterval(() => {
-                    if (i1 === audioQualityLow.length) {
-                        clearInterval(interval);
-                    }
-                    audioQualityId = audioQualityLow[i1];
-                    const grepQuality = `grep -P '\\b${audioQualityId}(?![\\d.])\\b' quality.txt`;
-                    exec(grepQuality, (error, stdout, stderr) => {
-                        if (stdout) {
-                            console.log("Quality id saved successfully");
-                            const saveAudioId = `echo "${audioQualityId}" > audioQualityId.txt`;
-                            exec(saveAudioId, (error, stderr, stdout) => {
-                            });
-                            clearInterval(interval1);
-                            road2download();
-                        }
-                        if (stderr) {
-                            console.error("Error:", stderr);
-                        }
-                        if (error !== null) {
-                            console.error("Exec error:", error);
-                        }
+                videoQualityChecker(quality720p);
+            break;
+
+            case '360p': 
+                videoQualityChecker(quality360p);
+            break;
+
+            default: 
+                progress.textContent = `Selecting a quality`;
+            break;
+        }
+    }
+
+    function videoQualityChecker(qualityList) {
+        let videoQualityId;
+        const { exec } = window.electron.require('child_process');
+        let i = 0;
+        let interval = setInterval(() => { // Checks the list every 0.1 seconds. Good if you dont wanna mess things with a "very fast" for loop
+            if (i === qualityList.length) {
+                clearInterval(interval);
+            }
+            videoQualityId = qualityList[i];
+            const grepQuality = `grep -P '\\b${videoQualityId}(?![\\d.])\\b' quality.txt`; // grep command to find quality id in text file.
+            exec(grepQuality, (error, stdout, stderr) => {
+                if (stdout) {
+                    console.log("Quality id saved successfully");
+                    const saveVideoId = `echo "${videoQualityId}" > qualityId.txt`;
+                    exec(saveVideoId, (error, stderr, stdout) => {
                     });
-                    i1++;
-                }, 500); 
+                    clearInterval(interval);
+                    checkAudioQuality();
+                }
+                if (stderr) {
+                    console.error("Error:", stderr);
+                }
+                if (error !== null) {
+                    console.error("Exec error:", error);
+                }
+            });
+            i++;
+        }, 100); 
+    }
+
+    function checkAudioQuality() { // Executes the checker with the given list of audio quality ids.
+        switch(mode) {
+            case '2160p':
+                audioQualityChecker(audioQualityMedium);
+            break;
+
+            case '1080p':
+                audioQualityChecker(audioQualityMedium);
+            break;
+
+            case '720p':
+                audioQualityChecker(audioQualityLow);
+            break;
+
+            case '360p':
+                audioQualityChecker(audioQualityLow);
             break;
 
             default: 
@@ -405,8 +324,38 @@ document.addEventListener("DOMContentLoaded", function() {
 
     }
 
+    function audioQualityChecker(audioQualityList) {
+        const { exec } = window.electron.require('child_process');
+        let audioQualityId;
+        path.textContent = `Checking audio quality.`;
+        let i = 0;
+        let interval = setInterval(() => {
+            if (i === audioQualityList.length) {
+                clearInterval(interval);
+            }
+            audioQualityId = audioQualityList[i];
+            const grepQuality = `grep -P '\\b${audioQualityId}(?![\\d.])\\b' quality.txt`; //same grep command used in videoQualityChecker()
+            exec(grepQuality, (error, stdout, stderr) => {
+                if (stdout) {
+                    console.log("Quality id saved successfully");
+                    const saveAudioId = `echo "${audioQualityId}" > audioQualityId.txt`;
+                    exec(saveAudioId, (error, stderr, stdout) => {
+                    });
+                    clearInterval(interval);
+                    road2download();
+                }
+                if (stderr) {
+                    console.error("Error:", stderr);
+                }
+                if (error !== null) {
+                    console.error("Exec error:", error);
+                }
+            });
+            i++;
+        }, 100);
+    }
+
     function road2download() {
-        path.textContent = `Reading video quality.`;
         const { exec } = window.electron.require('child_process');
         const catQualityId = `cat qualityId.txt`;
         let vQualityId;
@@ -421,15 +370,14 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             if (stderr) {
                 vQualityId = stderr;
-                vQualityId = vQualityId.trim();
-                console.log(vQualityId);
+                vQualityId = vQualityId.trim(); // removes new line character
+                console.log(`Video quality id set: ${vQualityId}`);
                 road2download2(vQualityId);
             }
         });
     }
     
     function road2download2(vQualityId) {
-        path.textContent = `Reading audio quality.`;
         const { exec } = window.electron.require('child_process');
         const catQualityId = `cat audioQualityId.txt`;
         let aQualityId;
@@ -445,8 +393,8 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             if (stderr) {
                 aQualityId = stderr;
-                aQualityId = aQualityId.trim();
-                console.log(aQualityId);
+                aQualityId = aQualityId.trim(); // removes new line character
+                console.log(`Audio quality id set: ${aQualityId}`);
                 download(vQualityId, aQualityId);
             }
         });
@@ -455,20 +403,15 @@ document.addEventListener("DOMContentLoaded", function() {
     function download(vQualityId, aQualityId) {
         const { exec } = window.electron.require('child_process');
         console.log("Executing download function.")
-
-        if (aQualityId) {
-            const command = `yt-dlp -f ${vQualityId}+${aQualityId} ${textbox.value} -o "${path.value}/%(title)s" > output.txt`;
-        }
-        else {
-            const command = `yt-dlp -f ${vQualityId} ${textbox.value} -o "${path.value}/%(title)s" > output.txt`;
-        }
-
+        // Our download command. yt-dlp bundles the already set video and audio with ${vQualityId}+${aQualityId}
+        const command = `yt-dlp -f ${vQualityId}+${aQualityId} ${textbox.value} -o "${path.value}/%(title)s" > output.txt`;
+        // Command to read progress
         let catProgress = `cat output.txt | grep "%"`;
-
+        // Scrolls progress box to bottom
         function scrollToBottom() {
             progress.scrollTop = progress.scrollHeight;
         }
-
+        // Checks the download log every 0.1 seconds
         let logInterval;
         logInterval = setInterval(() => {
             exec(catProgress, (error, stdout, stderr) => {
@@ -484,33 +427,33 @@ document.addEventListener("DOMContentLoaded", function() {
                 scrollToBottom();
             });
         }, 100);
-
-        let downloadInterval;
-        downloadInterval = setInterval(() => {
-            exec(command, (error, stdout, stderr) => {
-                if (error) {
-                    console.log("Error executing download command");
-                    console.log(`Error here: ${error}`);
-                }
-                if (stderr) {
-                    console.log("StdErr executing download command");
-                    console.log(`StdErr here: ${stderr}`);
-                }
-                clearInterval(logInterval);
-                clearInterval(downloadInterval);
-                if (!error) {
-                    progress.textContent = `Saved video successfuly to ${path.value}/`; 
-                }
-            });
-        }, 5000);
+        // Executes our download command.
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.log("Error executing download command");
+                console.log(`Error here: ${error}`);
+            }
+            if (stderr) {
+                console.log("StdErr executing download command");
+                console.log(`StdErr here: ${stderr}`);
+            }
+            clearInterval(logInterval);
+            clearInterval(downloadInterval);
+            if (!error) {
+                progress.textContent = `Saved video successfuly to ${path.value}/`; 
+            }
+        });
     }
 
-
+    // Minimize and close
     minimize.addEventListener(('click'), (event, minimize) => {
         window.electron.sendMinimizeSignal();
     });
 
     close.addEventListener(('click'), (event, minimize) => {
+        const { exec } = window.electron.require('child_process'); // Let's clear our junk.
+        const clearStuff = `echo "" > output.txt && echo "" > quality.txt && echo "" > audioQualityId.txt && echo "" > output.txt`;
+        exec (clearStuff, (error, stderr, stdout) => {});
         window.electron.sendCloseSignal();
     });
 
