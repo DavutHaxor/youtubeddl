@@ -12,7 +12,6 @@ document.addEventListener("DOMContentLoaded", function() {
     const pathOverlay = document.getElementById("overlay");
     const close = document.getElementById("close");
     const minimize = document.getElementById("minimize");
-    const drag = document.getElementById("drag");
 
     let mode;
 
@@ -143,7 +142,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         }
                         else {
                             thumbnailExists(thumbnailHqUrl, function(exists) {
-                                if (exists) {
+                                if (exists) { // Really slow till it gets here. I think youtube should give us the URL of the thumbnail that is used by default, universal for videos.
                                     progress.textContent = ``;
                                     thumbnail.src = thumbnailHqUrl;
                                 }
@@ -164,7 +163,13 @@ document.addEventListener("DOMContentLoaded", function() {
 
     });
 
+    // Gets the path. Actually sends the signal to main. Main gets the path and writes it to the file
+    pathOverlay.addEventListener('click', (event, path) => {
+        console.log("sending the path:get signal");
+        window.electron.sendSignal();
+    }) 
 
+    // Reads the path from file
     function checkPath() {
         const { exec } = window.electron.require('child_process');
         const catPath = `cat path.txt`;
@@ -222,19 +227,13 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     };
 
-    // Gets the path. Actually sends the signal to main. Main gets the path and writes it to the file
-    pathOverlay.addEventListener('click', (event, path) => {
-        console.log("sending the path:get signal");
-        window.electron.sendSignal();
-    }) 
-
 
     function checkQuality() { // This actually both saves the quality and checks video and audio quality afterwards.
         const { exec } = window.electron.require('child_process');
 
-        const saveQuality = `echo "" > quality.txt | yt-dlp -F ${textbox.value} > quality.txt`;
+        const saveQualityList = `echo "" > quality.txt | yt-dlp -F ${textbox.value} > quality.txt`;
 
-        exec(saveQuality, (error, stderr, stdout) => {
+        exec(saveQualityList, (error, stderr, stdout) => {
             if (!error) {
                 checkVideoQuality();
             }
@@ -282,11 +281,11 @@ document.addEventListener("DOMContentLoaded", function() {
             exec(grepQuality, (error, stdout, stderr) => {
                 if (stdout) {
                     console.log("Quality id saved successfully");
-                    const saveVideoId = `echo "${videoQualityId}" > qualityId.txt`;
+                    const saveVideoId = `echo "${videoQualityId}" > qualityId.txt`; // Save the video quality to the file
                     exec(saveVideoId, (error, stderr, stdout) => {
                     });
                     clearInterval(interval);
-                    checkAudioQuality();
+                    checkAudioQuality(); // Proceed to next step
                 }
                 if (stderr) {
                     console.error("Error:", stderr);
@@ -334,15 +333,15 @@ document.addEventListener("DOMContentLoaded", function() {
                 clearInterval(interval);
             }
             audioQualityId = audioQualityList[i];
-            const grepQuality = `grep -P '\\b${audioQualityId}(?![\\d.])\\b' quality.txt`; //same grep command used in videoQualityChecker()
+            const grepQuality = `grep -P '\\b${audioQualityId}(?![\\d.])\\b' quality.txt`; // Same grep command used in videoQualityChecker()
             exec(grepQuality, (error, stdout, stderr) => {
                 if (stdout) {
                     console.log("Quality id saved successfully");
-                    const saveAudioId = `echo "${audioQualityId}" > audioQualityId.txt`;
+                    const saveAudioId = `echo "${audioQualityId}" > audioQualityId.txt`; // Saves the audio quality to the file
                     exec(saveAudioId, (error, stderr, stdout) => {
                     });
                     clearInterval(interval);
-                    road2download();
+                    readVideoQualityId(); // Proceeds to next step
                 }
                 if (stderr) {
                     console.error("Error:", stderr);
@@ -355,7 +354,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }, 100);
     }
 
-    function road2download() {
+    function readVideoQualityId() { // Reads the video quality id from file
         const { exec } = window.electron.require('child_process');
         const catQualityId = `cat qualityId.txt`;
         let vQualityId;
@@ -370,14 +369,14 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             if (stderr) {
                 vQualityId = stderr;
-                vQualityId = vQualityId.trim(); // removes new line character
+                vQualityId = vQualityId.trim(); // Removes new line character
                 console.log(`Video quality id set: ${vQualityId}`);
-                road2download2(vQualityId);
+                readAudioQualityId(vQualityId); // Pass video quality id to next reader function
             }
         });
     }
     
-    function road2download2(vQualityId) {
+    function readAudioQualityId(vQualityId) { // Reads the audio quality id from file
         const { exec } = window.electron.require('child_process');
         const catQualityId = `cat audioQualityId.txt`;
         let aQualityId;
@@ -395,7 +394,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 aQualityId = stderr;
                 aQualityId = aQualityId.trim(); // removes new line character
                 console.log(`Audio quality id set: ${aQualityId}`);
-                download(vQualityId, aQualityId);
+                download(vQualityId, aQualityId); // Pass both ids to the downlaod function
             }
         });
     }
@@ -458,7 +457,5 @@ document.addEventListener("DOMContentLoaded", function() {
         exec (clearStuff, (error, stderr, stdout) => {});
         window.electron.sendCloseSignal();
     });
-
-    
 
 });

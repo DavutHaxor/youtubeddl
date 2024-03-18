@@ -11,7 +11,6 @@ const createWindow = () => {
     webPreferences: {
         preload: path.join(__dirname, 'preload.js'),
         nodeIntegration: true,
-        contextIsolation: true
     },
     resizable: false,
     icon: __dirname + 'youtube.png'
@@ -19,17 +18,15 @@ const createWindow = () => {
 
   win.loadFile('index.html')
 
-  ipc.on("minimize", function (event) {
+  ipc.on("minimize", function (event) { // Listens the renderer for minimize signal
     win.minimize();
   });
 
-  ipc.on("close", function (event) {
+  ipc.on("close", function (event) { // Listens the renderer for close signal
     win.close();
   });
 
 }
-
-let win;
 
 app.whenReady().then(() => {
   createWindow()
@@ -37,51 +34,35 @@ app.whenReady().then(() => {
 
 const { exec } = require('child_process');
 
+ipc.on("path:get", function (event) { // Listener for path:get.
+  dialog
+    .showOpenDialog({
+      properties: ["openFile", "openDirectory"],
+    })
 
+    .then((result) => {
 
-ipc.on("path:get", function (event) {
-  if (os.platform() === "linux" || os.platform() === "win32") {
-    dialog
-        .showOpenDialog({
-            properties: ["openFile", "openDirectory"],
-        })
-        .then((result) => {
-            /*if (result) win.webContents.send("path:selected", result.filePaths);*/
-            if (result) {
-              let chosenPath = result.filePaths;
-              const cleanPath = chosenPath[0].replace(/[\[\]']/g, '');
-              const writePath = `echo "${cleanPath}" > path.txt`;
-              console.log(cleanPath);
+      if (result) {
+        let chosenPath = result.filePaths;
+        const cleanPath = chosenPath[0].replace(/[\[\]']/g, ''); // Removes '[]' from path and makes it clean.
+        const writePath = `echo "${cleanPath}" > path.txt`; // Saves the clean path.
+        console.log(cleanPath);
 
-              exec(writePath, (error, stdout, stderr) => {
-                if (error) {
-                  console.error(`Error executing command: ${writePath}`);
-                  console.error(error.message);
-                  return;
-              }
-              if (stderr) {
-                  console.error(stderr);
-                  return;
-              }
-              })
-            }
-            
-        })
-        .catch((err) => {
-            console.log(err);
+        exec(writePath, (error, stdout, stderr) => {
+          if (error) {
+            console.error(`Error executing command: ${writePath}`);
+            console.error(error.message);
+            return;
+          }
+          if (stderr) {
+            console.error(stderr);
+            return;
+          }
         });
-} else {
-    dialog
-        .showOpenDialog({
-            properties: ["openFile", "openDirectory"],
-        })
-        .then((result) => {
-            /*if (result) win.webContents.send("path:selected", result.filePaths);*/
-        })
-        .catch((err) => {
-            console.log(err);
-        });
-  }
+      }
+    })
+    
+    .catch((err) => {
+      console.log(err);
+    });
 });
-
-
