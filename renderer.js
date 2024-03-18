@@ -404,7 +404,10 @@ document.addEventListener("DOMContentLoaded", function() {
         const { exec } = window.electron.require('child_process');
         console.log("Executing download function.")
         // Our download command. yt-dlp bundles the already set video and audio with ${vQualityId}+${aQualityId}
-        const command = `yt-dlp -f ${vQualityId}+${aQualityId} ${textbox.value} -o "${path.value}/%(title)s" > output.txt`;
+        if(aQualityId) {
+            aQualityId = '+' + aQualityId;
+        }
+        const command = `yt-dlp -f ${vQualityId}${aQualityId} ${textbox.value} -o "${path.value}/%(title)s" > output.txt`;
         // Command to read progress
         let catProgress = `cat output.txt | grep "%"`;
         // Scrolls progress box to bottom
@@ -438,7 +441,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.log(`StdErr here: ${stderr}`);
             }
             clearInterval(logInterval);
-            clearInterval(downloadInterval);
             if (!error) {
                 progress.textContent = `Saved video successfuly to ${path.value}/`; 
             }
